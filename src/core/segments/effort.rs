@@ -42,25 +42,13 @@ impl EffortSegment {
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
     }
-
-    fn get_gauge_icon(level: &str) -> String {
-        match level {
-            "low" => "\u{f0a9e}".to_string(),    // circle_slice_1 (low fill)
-            "medium" => "\u{f0aa1}".to_string(), // circle_slice_4 (half fill)
-            "high" => "\u{f0aa3}".to_string(),   // circle_slice_6 (mostly full)
-            "max" => "\u{f0aa5}".to_string(),    // circle_slice_8 (full)
-            _ => "\u{f0aa3}".to_string(),        // default to high
-        }
-    }
 }
 
 impl Segment for EffortSegment {
     fn collect(&self, input: &InputData) -> Option<SegmentData> {
         let level = Self::get_effort_level(input);
-        let dynamic_icon = Self::get_gauge_icon(&level);
 
         let mut metadata = HashMap::new();
-        metadata.insert("dynamic_icon".to_string(), dynamic_icon);
         metadata.insert("effort_level".to_string(), level.clone());
 
         Some(SegmentData {

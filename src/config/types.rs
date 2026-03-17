@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 // Main config structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,6 +75,7 @@ pub enum SegmentId {
     Update,
     Effort,
     ExtraUsage,
+    Usage7d,
 }
 
 impl std::fmt::Display for SegmentId {
@@ -91,6 +92,7 @@ impl std::fmt::Display for SegmentId {
             SegmentId::Update => write!(f, "Update"),
             SegmentId::Effort => write!(f, "Effort"),
             SegmentId::ExtraUsage => write!(f, "Extra Usage"),
+            SegmentId::Usage7d => write!(f, "Usage 7d"),
         }
     }
 }
@@ -262,6 +264,54 @@ impl NormalizedUsage {
 }
 
 impl Config {
+    /// Merge a theme's visual properties (style, colors, icons) onto the current config,
+    /// preserving the user's `enabled` state and `options` for each segment.
+    pub fn merge_theme_visuals(current: &Config, theme: &Config) -> Config {
+        let current_states: HashMap<SegmentId, &SegmentConfig> =
+            current.segments.iter().map(|s| (s.id, s)).collect();
+
+        let mut merged_segments = Vec::new();
+        let mut seen_ids = HashSet::new();
+
+        // Use theme's segment order, but preserve user's enabled + options
+        for theme_seg in &theme.segments {
+            let mut seg = theme_seg.clone();
+            if let Some(current_seg) = current_states.get(&theme_seg.id) {
+                seg.enabled = current_seg.enabled;
+                seg.options = current_seg.options.clone();
+            }
+            seen_ids.insert(seg.id);
+            merged_segments.push(seg);
+        }
+
+        // Append segments from current config missing in theme (e.g., newer segments in old file-based theme)
+        for current_seg in &current.segments {
+            if !seen_ids.contains(&current_seg.id) {
+                merged_segments.push(current_seg.clone());
+            }
+        }
+
+        Config {
+            style: theme.style.clone(),
+            segments: merged_segments,
+            theme: theme.theme.clone(),
+        }
+    }
+
+    /// Ensure all known segments exist in this config. Missing segments (e.g., from
+    /// older file-based themes) are appended as disabled with built-in defaults.
+    pub fn ensure_all_segments(&mut self) {
+        let existing_ids: HashSet<SegmentId> = self.segments.iter().map(|s| s.id).collect();
+        let builtin = crate::ui::themes::ThemePresets::get_builtin_theme(&self.theme);
+        for builtin_seg in &builtin.segments {
+            if !existing_ids.contains(&builtin_seg.id) {
+                let mut seg = builtin_seg.clone();
+                seg.enabled = false;
+                self.segments.push(seg);
+            }
+        }
+    }
+
     /// Check if current config matches the specified theme preset
     pub fn matches_theme(&self, theme_name: &str) -> bool {
         let theme_preset = crate::ui::themes::ThemePresets::get_theme(theme_name);

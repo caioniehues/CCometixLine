@@ -9,6 +9,7 @@ pub mod output_style;
 pub mod session;
 pub mod update;
 pub mod usage;
+pub mod usage_7d;
 
 use crate::config::{InputData, SegmentId};
 use std::collections::HashMap;
@@ -27,7 +28,7 @@ pub struct SegmentData {
 }
 
 /// Shared circle slice icon based on a 0.0–1.0 utilization fraction.
-/// Used by Usage and ExtraUsage segments for dynamic pie-chart icons.
+/// Used by ExtraUsage segment for dynamic pie-chart icons.
 pub fn circle_icon_for_utilization(utilization: f64) -> &'static str {
     let percent = (utilization * 100.0) as u8;
     match percent {
@@ -39,6 +40,28 @@ pub fn circle_icon_for_utilization(utilization: f64) -> &'static str {
         63..=75 => "\u{f0aa3}",
         76..=87 => "\u{f0aa4}",
         _ => "\u{f0aa5}",
+    }
+}
+
+/// FA hourglass icons for Usage (5h) segment — 4 fill levels.
+pub fn hourglass_icon_for_utilization(utilization: f64) -> &'static str {
+    let percent = (utilization * 100.0) as u8;
+    match percent {
+        0..=25 => "\u{f250}",  // nf-fa-hourglass_o (empty)
+        26..=50 => "\u{f251}", // nf-fa-hourglass_1 (start/1-3)
+        51..=75 => "\u{f252}", // nf-fa-hourglass_2 (half/2-3)
+        _ => "\u{f253}",       // nf-fa-hourglass_3 (end/full)
+    }
+}
+
+/// MD sand timer icons for Usage7d segment — 4 fill levels.
+pub fn sand_timer_icon_for_utilization(utilization: f64) -> &'static str {
+    let percent = (utilization * 100.0) as u8;
+    match percent {
+        0..=25 => "\u{f06ad}",  // nf-md-timer_sand_empty
+        26..=50 => "\u{f051f}", // nf-md-timer_sand
+        51..=75 => "\u{f078c}", // nf-md-timer_sand_full
+        _ => "\u{f199f}",       // nf-md-timer_sand_complete
     }
 }
 
@@ -54,3 +77,4 @@ pub use output_style::OutputStyleSegment;
 pub use session::SessionSegment;
 pub use update::UpdateSegment;
 pub use usage::UsageSegment;
+pub use usage_7d::Usage7dSegment;

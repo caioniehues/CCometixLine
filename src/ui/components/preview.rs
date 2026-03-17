@@ -137,9 +137,14 @@ impl PreviewComponent {
                     },
                 },
                 SegmentId::Usage => SegmentData {
-                    primary: "24%".to_string(),
-                    secondary: "· 10-7-2".to_string(),
-                    metadata: HashMap::new(),
+                    primary: "24% @14:30".to_string(),
+                    secondary: String::new(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("dynamic_icon".to_string(), "\u{f250}".to_string());
+                        map.insert("five_hour_utilization".to_string(), "24.0".to_string());
+                        map
+                    },
                 },
                 SegmentId::Cost => SegmentData {
                     primary: "$0.02".to_string(),
@@ -188,7 +193,6 @@ impl PreviewComponent {
                     secondary: "".to_string(),
                     metadata: {
                         let mut map = HashMap::new();
-                        map.insert("dynamic_icon".to_string(), "\u{f0aa3}".to_string());
                         map.insert("effort_level".to_string(), "high".to_string());
                         map
                     },
@@ -202,6 +206,16 @@ impl PreviewComponent {
                         map.insert("extra_usage_utilization".to_string(), "6.25".to_string());
                         map.insert("used_credits".to_string(), "12.50".to_string());
                         map.insert("monthly_limit".to_string(), "200.00".to_string());
+                        map
+                    },
+                },
+                SegmentId::Usage7d => SegmentData {
+                    primary: "34% @mar 20, 18:00".to_string(),
+                    secondary: String::new(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("dynamic_icon".to_string(), "\u{f051f}".to_string());
+                        map.insert("seven_day_utilization".to_string(), "34.0".to_string());
                         map
                     },
                 },

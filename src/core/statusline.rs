@@ -214,7 +214,9 @@ impl StatusLineGenerator {
     }
 
     fn render_segment(&self, config: &SegmentConfig, data: &SegmentData) -> String {
-        let icon = if let Some(dynamic_icon) = data.metadata.get("dynamic_icon") {
+        let icon = if self.config.style.mode == StyleMode::Plain {
+            self.get_icon(config)
+        } else if let Some(dynamic_icon) = data.metadata.get("dynamic_icon") {
             dynamic_icon.clone()
         } else {
             self.get_icon(config)
@@ -515,6 +517,10 @@ pub fn collect_all_segments(
             }
             crate::config::SegmentId::ExtraUsage => {
                 let segment = ExtraUsageSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::Usage7d => {
+                let segment = Usage7dSegment::new();
                 segment.collect(input)
             }
         };

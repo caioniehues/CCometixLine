@@ -14,6 +14,18 @@ pub enum InitResult {
 pub struct ConfigLoader;
 
 impl ConfigLoader {
+    const BUILTIN_THEME_NAMES: [&str; 9] = [
+        "cometix",
+        "default",
+        "minimal",
+        "gruvbox",
+        "nord",
+        "powerline-dark",
+        "powerline-light",
+        "powerline-rose-pine",
+        "powerline-tokyo-night",
+    ];
+
     pub fn load() -> Config {
         Config::load().unwrap_or_else(|_| Config::default())
     }
@@ -24,40 +36,20 @@ impl ConfigLoader {
         Ok(config)
     }
 
-    /// Initialize themes directory and create built-in theme files
+    /// Initialize themes directory and write built-in theme files.
+    /// Built-in themes are always overwritten to stay in sync with the binary.
+    /// Users who customize should use "Save as New Theme" to create custom themes.
     pub fn init_themes() -> Result<(), Box<dyn std::error::Error>> {
         let themes_dir = Self::get_themes_path();
 
         // Create themes directory
         fs::create_dir_all(&themes_dir)?;
 
-        let builtin_themes = [
-            "cometix",
-            "default",
-            "minimal",
-            "gruvbox",
-            "nord",
-            "powerline-dark",
-            "powerline-light",
-            "powerline-rose-pine",
-            "powerline-tokyo-night",
-        ];
-        let mut created_any = false;
-
-        for theme_name in &builtin_themes {
+        for theme_name in &Self::BUILTIN_THEME_NAMES {
+            let theme_config = crate::ui::themes::ThemePresets::get_builtin_theme(theme_name);
+            let content = toml::to_string_pretty(&theme_config)?;
             let theme_path = themes_dir.join(format!("{}.toml", theme_name));
-
-            if !theme_path.exists() {
-                let theme_config = crate::ui::themes::ThemePresets::get_theme(theme_name);
-                let content = toml::to_string_pretty(&theme_config)?;
-                fs::write(&theme_path, content)?;
-                println!("Created theme file: {}", theme_path.display());
-                created_any = true;
-            }
-        }
-
-        if !created_any {
-            // println!("All built-in theme files already exist");
+            fs::write(&theme_path, content)?;
         }
 
         Ok(())
@@ -78,33 +70,17 @@ impl ConfigLoader {
         let _ = Self::init_themes_silent();
     }
 
-    /// Initialize themes directory and create built-in theme files (silent mode)
+    /// Initialize themes directory and write built-in theme files (silent mode).
+    /// Always overwrites built-in themes to stay in sync with the binary.
     fn init_themes_silent() -> Result<(), Box<dyn std::error::Error>> {
         let themes_dir = Self::get_themes_path();
-
-        // Create themes directory
         fs::create_dir_all(&themes_dir)?;
 
-        let builtin_themes = [
-            "default",
-            "minimal",
-            "gruvbox",
-            "nord",
-            "cometix",
-            "powerline-dark",
-            "powerline-light",
-            "powerline-rose-pine",
-            "powerline-tokyo-night",
-        ];
-
-        for theme_name in &builtin_themes {
+        for theme_name in &Self::BUILTIN_THEME_NAMES {
+            let theme_config = crate::ui::themes::ThemePresets::get_builtin_theme(theme_name);
+            let content = toml::to_string_pretty(&theme_config)?;
             let theme_path = themes_dir.join(format!("{}.toml", theme_name));
-
-            if !theme_path.exists() {
-                let theme_config = crate::ui::themes::ThemePresets::get_theme(theme_name);
-                let content = toml::to_string_pretty(&theme_config)?;
-                fs::write(&theme_path, content)?;
-            }
+            fs::write(&theme_path, content)?;
         }
 
         Ok(())

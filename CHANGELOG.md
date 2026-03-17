@@ -8,24 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Usage 7d Segment**: New segment displaying 7-day API usage with reset datetime
+  - Reads from the shared Usage cache (no duplicate API calls)
+  - Distinct sand timer NerdFont icons (`nf-md-timer_sand_*`) for visual differentiation from 5h usage
 - **Effort Segment**: New segment displaying the current reasoning effort level (high/medium/low/max)
   - Fallback chain: stdin JSON → `~/.claude/settings.json` → `CLAUDE_CODE_EFFORT_LEVEL` env var → default "high"
-  - Dynamic gauge icon changes based on effort level
 - **Extra Usage Segment**: New segment showing bonus credit consumption ($used/$limit)
   - Reads from the shared Usage API cache (no duplicate API calls)
   - Hidden automatically when extra usage is not enabled on the account
   - Dynamic pie chart icon based on utilization percentage
+- **Shared Cache Support**: Usage segment reads/writes `/tmp/claude/statusline-usage-cache.json` for cross-tool cache sharing with the bash statusline script
+- **`Config::merge_theme_visuals()`**: Merges theme visual properties while preserving user's segment enabled states and options
+- **`Config::ensure_all_segments()`**: Fills in missing segments from built-in themes when loading old theme files
+- **`ThemePresets::get_builtin_theme()`**: Direct access to hardcoded built-in themes, bypassing file loading
+- **GNOME Keyring OAuth support**: Credentials resolution now tries `secret-tool` for GNOME Keyring in addition to file-based and macOS Keychain
+- **`CLAUDE_CODE_OAUTH_TOKEN` env var**: Explicit OAuth token override, checked first before all other sources
+- **Hourglass icons**: Usage (5h) segment uses FA hourglass icons (`nf-fa-hourglass_*`) for visual differentiation
+- **Sand timer icons**: Usage 7d segment uses MD timer sand icons (`nf-md-timer_sand_*`)
+- **Options Editor**: New TUI popup component for editing segment options
 - **Settings Utility** (`utils/settings.rs`): Centralized `~/.claude/settings.json` reader respecting `CLAUDE_CONFIG_DIR`
-- **Shared Icon Utility**: `circle_icon_for_utilization()` in `segments/mod.rs` replaces duplicated icon functions
 - **`Display` impl for `SegmentId`**: Canonical display names, replacing 4 duplicated match blocks across the TUI
 
 ### Changed
+- **Theme switching preserves segment state**: `switch_to_theme()` now merges visuals instead of replacing the entire config — enabled segments stay enabled across theme switches
+- **Built-in theme files regenerated on every startup**: `init_themes()` always overwrites built-in theme files to stay in sync with the binary, fixing stale theme file issues after upgrades
+- **Usage segment cache-first flow**: Check ccline cache → shared cache (`/tmp/claude/`) → API call → stale fallback. Token is only needed for the API call, not for cache reads
+- **Default cache duration**: Reduced from 180s/300s to 60s to match the bash statusline script
+- **OAuth credential resolution order**: env var → macOS Keychain → credentials file → GNOME Keyring (matches bash statusline)
+- **User-Agent for API calls**: Now uses `claude --version` (local install) instead of `npm view` (network call to registry)
+- **Usage segment icons**: Changed from circle-slice to hourglass NerdFont icons to differentiate from ExtraUsage
+- **`render_segment()` respects StyleMode**: Plain mode skips NerdFont dynamic icons, preventing garbled characters
 - **Usage API Cache**: Extended with `extra_usage_*` fields, all backward-compatible via `#[serde(default)]`
 - **Usage Segment Internals**: `load_cache()`, `get_cache_path()`, `is_cache_valid()` now `pub(crate)` for cross-segment cache sharing
-- **All 9 themes**: Each theme now includes Effort and Extra Usage segment definitions (both default to disabled)
+- **All 9 themes**: Updated with Usage 7d segment, new hourglass/sand-timer icons, 60s cache duration
 
 ### Fixed
+- **Theme switching drops segments**: Switching themes no longer resets segment enabled/disabled states
+- **Stale theme files after upgrade**: Built-in theme files are now always regenerated, so code changes take effect immediately
+- **Usage icons broken in Plain mode**: `render_segment()` now uses the configured plain emoji icon instead of NerdFont dynamic icons in Plain mode
+- **Shared cache null deserialization**: `ExtraUsagePeriod` fields handle JSON `null` values via `null_as_default` deserializer (not just missing fields)
 - **TOCTOU in `load_cache()`**: Removed redundant `exists()` check before `read_to_string()`
+- **Redundant `exists()` in credentials**: `read_token_from_path()` now reads directly and handles errors
 
 ## [1.1.2] - 2026-03-15
 

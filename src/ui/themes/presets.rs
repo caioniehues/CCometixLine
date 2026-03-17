@@ -18,6 +18,11 @@ impl ThemePresets {
         }
 
         // Fallback to built-in themes
+        Self::get_builtin_theme(theme_name)
+    }
+
+    /// Always returns the hardcoded built-in theme, bypassing file loading.
+    pub fn get_builtin_theme(theme_name: &str) -> Config {
         match theme_name {
             "cometix" => Self::get_cometix(),
             "default" => Self::get_default(),
@@ -46,6 +51,9 @@ impl ThemePresets {
 
         // Ensure the theme field matches the requested theme
         config.theme = theme_name.to_string();
+
+        // Migrate old theme files: append any segments they don't define
+        config.ensure_all_segments();
 
         Ok(config)
     }
@@ -139,6 +147,7 @@ impl ThemePresets {
                 theme_cometix::output_style_segment(),
                 theme_cometix::effort_segment(),
                 theme_cometix::extra_usage_segment(),
+                theme_cometix::usage_7d_segment(),
             ],
             theme: "cometix".to_string(),
         }
@@ -161,6 +170,7 @@ impl ThemePresets {
                 theme_default::output_style_segment(),
                 theme_default::effort_segment(),
                 theme_default::extra_usage_segment(),
+                theme_default::usage_7d_segment(),
             ],
             theme: "default".to_string(),
         }
@@ -183,6 +193,7 @@ impl ThemePresets {
                 theme_minimal::output_style_segment(),
                 theme_minimal::effort_segment(),
                 theme_minimal::extra_usage_segment(),
+                theme_minimal::usage_7d_segment(),
             ],
             theme: "minimal".to_string(),
         }
@@ -205,6 +216,7 @@ impl ThemePresets {
                 theme_gruvbox::output_style_segment(),
                 theme_gruvbox::effort_segment(),
                 theme_gruvbox::extra_usage_segment(),
+                theme_gruvbox::usage_7d_segment(),
             ],
             theme: "gruvbox".to_string(),
         }
@@ -227,6 +239,7 @@ impl ThemePresets {
                 theme_nord::output_style_segment(),
                 theme_nord::effort_segment(),
                 theme_nord::extra_usage_segment(),
+                theme_nord::usage_7d_segment(),
             ],
             theme: "nord".to_string(),
         }
@@ -249,6 +262,7 @@ impl ThemePresets {
                 theme_powerline_dark::output_style_segment(),
                 theme_powerline_dark::effort_segment(),
                 theme_powerline_dark::extra_usage_segment(),
+                theme_powerline_dark::usage_7d_segment(),
             ],
             theme: "powerline-dark".to_string(),
         }
@@ -271,6 +285,7 @@ impl ThemePresets {
                 theme_powerline_light::output_style_segment(),
                 theme_powerline_light::effort_segment(),
                 theme_powerline_light::extra_usage_segment(),
+                theme_powerline_light::usage_7d_segment(),
             ],
             theme: "powerline-light".to_string(),
         }
@@ -293,6 +308,7 @@ impl ThemePresets {
                 theme_powerline_rose_pine::output_style_segment(),
                 theme_powerline_rose_pine::effort_segment(),
                 theme_powerline_rose_pine::extra_usage_segment(),
+                theme_powerline_rose_pine::usage_7d_segment(),
             ],
             theme: "powerline-rose-pine".to_string(),
         }
@@ -315,6 +331,7 @@ impl ThemePresets {
                 theme_powerline_tokyo_night::output_style_segment(),
                 theme_powerline_tokyo_night::effort_segment(),
                 theme_powerline_tokyo_night::extra_usage_segment(),
+                theme_powerline_tokyo_night::usage_7d_segment(),
             ],
             theme: "powerline-tokyo-night".to_string(),
         }

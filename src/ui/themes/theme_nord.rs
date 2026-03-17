@@ -222,8 +222,8 @@ pub fn effort_segment() -> SegmentConfig {
         id: SegmentId::Effort,
         enabled: false,
         icon: IconConfig {
-            plain: "💪".to_string(),
-            nerd_font: "\u{f0aa3}".to_string(),
+            plain: "🧠".to_string(),
+            nerd_font: "\u{f0ddb}".to_string(),
         },
         colors: ColorConfig {
             icon: Some(AnsiColor::Rgb {
@@ -283,7 +283,7 @@ pub fn usage_segment() -> SegmentConfig {
         enabled: false,
         icon: IconConfig {
             plain: "📊".to_string(),
-            nerd_font: "\u{f0a9e}".to_string(),
+            nerd_font: "\u{f250}".to_string(),
         },
         colors: ColorConfig {
             icon: Some(AnsiColor::Rgb {
@@ -311,10 +311,40 @@ pub fn usage_segment() -> SegmentConfig {
             );
             opts.insert(
                 "cache_duration".to_string(),
-                serde_json::Value::Number(180.into()),
+                serde_json::Value::Number(60.into()),
             );
             opts.insert("timeout".to_string(), serde_json::Value::Number(2.into()));
             opts
         },
+    }
+}
+
+pub fn usage_7d_segment() -> SegmentConfig {
+    SegmentConfig {
+        id: SegmentId::Usage7d,
+        enabled: false,
+        icon: IconConfig {
+            plain: "📅".to_string(),
+            nerd_font: "\u{f06ad}".to_string(),
+        },
+        colors: ColorConfig {
+            icon: Some(AnsiColor::Rgb {
+                r: 46,
+                g: 52,
+                b: 64,
+            }),
+            text: Some(AnsiColor::Rgb {
+                r: 46,
+                g: 52,
+                b: 64,
+            }),
+            background: Some(AnsiColor::Rgb {
+                r: 235,
+                g: 203,
+                b: 139,
+            }),
+        },
+        styles: TextStyleConfig::default(),
+        options: HashMap::new(),
     }
 }

@@ -4,6 +4,7 @@ use crate::ui::components::{
     help::HelpComponent,
     icon_selector::IconSelectorComponent,
     name_input::NameInputComponent,
+    options_editor::OptionsEditorComponent,
     preview::PreviewComponent,
     segment_list::{FieldSelection, Panel, SegmentListComponent},
     separator_editor::SeparatorEditorComponent,
@@ -36,6 +37,7 @@ pub struct App {
     preview: PreviewComponent,
     segment_list: SegmentListComponent,
     separator_editor: SeparatorEditorComponent,
+    options_editor: OptionsEditorComponent,
     settings: SettingsComponent,
     theme_selector: ThemeSelectorComponent,
     help: HelpComponent,
@@ -56,6 +58,7 @@ impl App {
             preview: PreviewComponent::new(),
             segment_list: SegmentListComponent::new(),
             separator_editor: SeparatorEditorComponent::new(),
+            options_editor: OptionsEditorComponent::new(),
             settings: SettingsComponent::new(),
             theme_selector: ThemeSelectorComponent::new(),
             help: HelpComponent::new(),
@@ -79,7 +82,7 @@ impl App {
             if let Ok(theme_config) =
                 crate::ui::themes::ThemePresets::load_theme_from_file(&config.theme)
             {
-                config = theme_config;
+                config = Config::merge_theme_visuals(&config, &theme_config);
             }
         }
 
@@ -114,6 +117,34 @@ impl App {
                         }
                         KeyCode::Char(c) => app.name_input.input_char(c),
                         KeyCode::Backspace => app.name_input.backspace(),
+                        _ => {}
+                    }
+                } else if app.options_editor.is_open {
+                    match key.code {
+                        KeyCode::Esc => {
+                            if app.options_editor.is_editing() {
+                                app.options_editor.cancel_edit();
+                            } else if let Some(updated_options) = app.options_editor.close() {
+                                if let Some(segment) =
+                                    app.config.segments.get_mut(app.selected_segment)
+                                {
+                                    segment.options = updated_options;
+                                    app.preview.update_preview(&app.config);
+                                    app.status_message = Some("Options updated!".to_string());
+                                }
+                            }
+                        }
+                        KeyCode::Enter => {
+                            if app.options_editor.is_editing() {
+                                app.options_editor.confirm_edit();
+                            } else {
+                                app.options_editor.start_editing();
+                            }
+                        }
+                        KeyCode::Up => app.options_editor.move_selection(-1),
+                        KeyCode::Down => app.options_editor.move_selection(1),
+                        KeyCode::Char(c) => app.options_editor.input_char(c),
+                        KeyCode::Backspace => app.options_editor.backspace(),
                         _ => {}
                     }
                 } else if app.separator_editor.is_open {
@@ -222,10 +253,15 @@ impl App {
                         }
                         KeyCode::Enter => app.toggle_current(),
                         KeyCode::Tab => app.switch_panel(),
-                        KeyCode::Char('1') => app.switch_to_theme("default"),
-                        KeyCode::Char('2') => app.switch_to_theme("minimal"),
-                        KeyCode::Char('3') => app.switch_to_theme("gruvbox"),
-                        KeyCode::Char('4') => app.switch_to_theme("nord"),
+                        KeyCode::Char('1') => app.switch_to_theme("cometix"),
+                        KeyCode::Char('2') => app.switch_to_theme("default"),
+                        KeyCode::Char('3') => app.switch_to_theme("minimal"),
+                        KeyCode::Char('4') => app.switch_to_theme("gruvbox"),
+                        KeyCode::Char('5') => app.switch_to_theme("nord"),
+                        KeyCode::Char('6') => app.switch_to_theme("powerline-dark"),
+                        KeyCode::Char('7') => app.switch_to_theme("powerline-light"),
+                        KeyCode::Char('8') => app.switch_to_theme("powerline-rose-pine"),
+                        KeyCode::Char('9') => app.switch_to_theme("powerline-tokyo-night"),
                         KeyCode::Char('p') => app.cycle_theme(),
                         KeyCode::Char('r') => app.reset_to_theme_defaults(),
                         KeyCode::Char('e') | KeyCode::Char('E') => app.open_separator_editor(),
@@ -306,7 +342,7 @@ impl App {
                 "[Tab] Switch Panel",
                 "[Enter] Toggle/Edit",
                 "[Shift+↑↓] Reorder",
-                "[1-4] Theme",
+                "[1-9] Theme",
                 "[P] Switch Theme",
                 "[R] Reset",
                 "[E] Edit Separator",
@@ -453,6 +489,9 @@ impl App {
         if self.separator_editor.is_open {
             self.separator_editor.render(f, f.area());
         }
+        if self.options_editor.is_open {
+            self.options_editor.render(f, f.area());
+        }
     }
 
     fn move_selection(&mut self, delta: i32) {
@@ -543,9 +582,9 @@ impl App {
                         }
                     }
                     FieldSelection::Options => {
-                        // TODO: Implement options editor
-                        self.status_message =
-                            Some("Options editor not implemented yet".to_string());
+                        if let Some(segment) = self.config.segments.get(self.selected_segment) {
+                            self.options_editor.open(&segment.options);
+                        }
                     }
                 }
             }
@@ -609,7 +648,8 @@ impl App {
     }
 
     fn switch_to_theme(&mut self, theme_name: &str) {
-        self.config = crate::ui::themes::ThemePresets::get_theme(theme_name);
+        let theme_config = crate::ui::themes::ThemePresets::get_theme(theme_name);
+        self.config = Config::merge_theme_visuals(&self.config, &theme_config);
         self.selected_segment = 0;
         self.preview.update_preview(&self.config);
         self.status_message = Some(format!("Switched to {} theme", theme_name));

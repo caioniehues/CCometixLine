@@ -42,7 +42,7 @@ impl HelpComponent {
                 ("[Tab]", "Switch Panel"),
                 ("[Enter]", "Toggle/Edit"),
                 ("[Shift+↑↓]", "Reorder"),
-                ("[1-4]", "Theme"),
+                ("[1-9]", "Theme"),
                 ("[P]", "Switch Theme"),
                 ("[R]", "Reset"),
                 ("[E]", "Edit Separator"),
