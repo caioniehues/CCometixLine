@@ -9,6 +9,20 @@ use std::collections::HashMap;
 struct ApiUsageResponse {
     five_hour: UsagePeriod,
     seven_day: UsagePeriod,
+    #[serde(default)]
+    extra_usage: Option<ExtraUsagePeriod>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub(crate) struct ExtraUsagePeriod {
+    #[serde(default)]
+    pub is_enabled: bool,
+    #[serde(default)]
+    pub utilization: f64,
+    #[serde(default)]
+    pub used_credits: f64,
+    #[serde(default)]
+    pub monthly_limit: f64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -18,11 +32,19 @@ struct UsagePeriod {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct ApiUsageCache {
-    five_hour_utilization: f64,
-    seven_day_utilization: f64,
-    resets_at: Option<String>,
-    cached_at: String,
+pub(crate) struct ApiUsageCache {
+    pub five_hour_utilization: f64,
+    pub seven_day_utilization: f64,
+    pub resets_at: Option<String>,
+    pub cached_at: String,
+    #[serde(default)]
+    pub extra_usage_enabled: bool,
+    #[serde(default)]
+    pub extra_usage_utilization: f64,
+    #[serde(default)]
+    pub extra_usage_used_credits: f64,
+    #[serde(default)]
+    pub extra_usage_monthly_limit: f64,
 }
 
 #[derive(Default)]
@@ -31,20 +53,6 @@ pub struct UsageSegment;
 impl UsageSegment {
     pub fn new() -> Self {
         Self
-    }
-
-    fn get_circle_icon(utilization: f64) -> String {
-        let percent = (utilization * 100.0) as u8;
-        match percent {
-            0..=12 => "\u{f0a9e}".to_string(),  // circle_slice_1
-            13..=25 => "\u{f0a9f}".to_string(), // circle_slice_2
-            26..=37 => "\u{f0aa0}".to_string(), // circle_slice_3
-            38..=50 => "\u{f0aa1}".to_string(), // circle_slice_4
-            51..=62 => "\u{f0aa2}".to_string(), // circle_slice_5
-            63..=75 => "\u{f0aa3}".to_string(), // circle_slice_6
-            76..=87 => "\u{f0aa4}".to_string(), // circle_slice_7
-            _ => "\u{f0aa5}".to_string(),       // circle_slice_8
-        }
     }
 
     fn format_reset_time(reset_time_str: Option<&str>) -> String {
@@ -65,7 +73,7 @@ impl UsageSegment {
         "?".to_string()
     }
 
-    fn get_cache_path() -> Option<std::path::PathBuf> {
+    pub(crate) fn get_cache_path() -> Option<std::path::PathBuf> {
         let home = dirs::home_dir()?;
         Some(
             home.join(".claude")
@@ -74,12 +82,8 @@ impl UsageSegment {
         )
     }
 
-    fn load_cache(&self) -> Option<ApiUsageCache> {
+    pub(crate) fn load_cache() -> Option<ApiUsageCache> {
         let cache_path = Self::get_cache_path()?;
-        if !cache_path.exists() {
-            return None;
-        }
-
         let content = std::fs::read_to_string(&cache_path).ok()?;
         serde_json::from_str(&content).ok()
     }
@@ -95,7 +99,7 @@ impl UsageSegment {
         }
     }
 
-    fn is_cache_valid(&self, cache: &ApiUsageCache, cache_duration: u64) -> bool {
+    pub(crate) fn is_cache_valid(cache: &ApiUsageCache, cache_duration: u64) -> bool {
         if let Ok(cached_at) = DateTime::parse_from_rfc3339(&cache.cached_at) {
             let now = Utc::now();
             let elapsed = now.signed_duration_since(cached_at.with_timezone(&Utc));
@@ -126,13 +130,7 @@ impl UsageSegment {
     }
 
     fn get_proxy_from_settings() -> Option<String> {
-        let home = std::env::var("HOME")
-            .or_else(|_| std::env::var("USERPROFILE"))
-            .ok()?;
-        let settings_path = format!("{}/.claude/settings.json", home);
-
-        let content = std::fs::read_to_string(&settings_path).ok()?;
-        let settings: serde_json::Value = serde_json::from_str(&content).ok()?;
+        let settings = crate::utils::settings::load_settings()?;
 
         // Try HTTPS_PROXY first, then HTTP_PROXY
         settings
@@ -203,10 +201,10 @@ impl Segment for UsageSegment {
             .and_then(|v| v.as_u64())
             .unwrap_or(2);
 
-        let cached_data = self.load_cache();
+        let cached_data = Self::load_cache();
         let use_cached = cached_data
             .as_ref()
-            .map(|cache| self.is_cache_valid(cache, cache_duration))
+            .map(|cache| Self::is_cache_valid(cache, cache_duration))
             .unwrap_or(false);
 
         let (five_hour_util, seven_day_util, resets_at) = if use_cached {
@@ -219,11 +217,16 @@ impl Segment for UsageSegment {
         } else {
             match self.fetch_api_usage(api_base_url, &token, timeout) {
                 Some(response) => {
+                    let extra = response.extra_usage.as_ref();
                     let cache = ApiUsageCache {
                         five_hour_utilization: response.five_hour.utilization,
                         seven_day_utilization: response.seven_day.utilization,
                         resets_at: response.seven_day.resets_at.clone(),
                         cached_at: Utc::now().to_rfc3339(),
+                        extra_usage_enabled: extra.is_some_and(|e| e.is_enabled),
+                        extra_usage_utilization: extra.map_or(0.0, |e| e.utilization),
+                        extra_usage_used_credits: extra.map_or(0.0, |e| e.used_credits),
+                        extra_usage_monthly_limit: extra.map_or(0.0, |e| e.monthly_limit),
                     };
                     self.save_cache(&cache);
                     (
@@ -246,7 +249,7 @@ impl Segment for UsageSegment {
             }
         };
 
-        let dynamic_icon = Self::get_circle_icon(seven_day_util / 100.0);
+        let dynamic_icon = super::circle_icon_for_utilization(seven_day_util / 100.0).to_string();
         let five_hour_percent = five_hour_util.round() as u8;
         let primary = format!("{}%", five_hour_percent);
         let secondary = format!("· {}", Self::format_reset_time(resets_at.as_deref()));

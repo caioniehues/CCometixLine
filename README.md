@@ -1,8 +1,8 @@
 # CCometixLine
 
-[English](README.md) | [中文](README.zh.md)
+Your Claude Code session, at a glance -- a fast, beautiful statusline written in Rust.
 
-A high-performance Claude Code statusline tool written in Rust with Git integration, usage tracking, interactive TUI configuration, and Claude Code enhancement utilities.
+CCometixLine turns the bottom of your terminal into a live dashboard: git state, model info, token usage, costs, reasoning effort, bonus credits, and more, all rendered in configurable Powerline/Nerd Font style with theme support.
 
 ![Language:Rust](https://img.shields.io/static/v1?label=Language&message=Rust&color=orange&style=flat-square)
 ![License:MIT](https://img.shields.io/static/v1?label=License&message=MIT&color=blue&style=flat-square)
@@ -16,11 +16,13 @@ The statusline shows: Model | Directory | Git Branch Status | Context Window Inf
 ## Features
 
 ### Core Functionality
-- **Git integration** with branch, status, and tracking info  
-- **Model display** with simplified Claude model names
-- **Usage tracking** based on transcript analysis
+- **11 segments** covering everything you care about during a session
+- **Git integration** with branch, status, and tracking info
+- **Model display** with simplified Claude model names and context modifiers
+- **Usage & cost tracking** via Anthropic API with intelligent caching
+- **Effort level indicator** showing current reasoning effort (high/medium/low/max)
+- **Extra Usage monitor** for bonus credit consumption ($used/$limit)
 - **Directory display** showing current workspace
-- **Minimal design** using Nerd Font icons
 
 ### Interactive TUI Features
 - **Interactive main menu** when executed without input
@@ -201,9 +203,23 @@ ccline --patch /path/to/claude-code/cli.js
 ccline --patch ~/.local/share/fnm/node-versions/v24.4.1/installation/lib/node_modules/@anthropic-ai/claude-code/cli.js
 ```
 
-## Default Segments
+## Segments
 
-Displays: `Directory | Git Branch Status | Model | Context Window`
+CCometixLine ships with 11 segments. Each theme enables a curated subset by default, and you can toggle any of them on or off in the TUI configurator.
+
+| Segment | What it shows |
+|---------|---------------|
+| **Model** | Simplified model name with version extraction (e.g. `Opus 4 1M`) |
+| **Directory** | Current workspace path |
+| **Git** | Branch, dirty/clean status, ahead/behind counts |
+| **Context Window** | Token usage % against the model's context limit |
+| **Usage** | 5-hour and 7-day Anthropic API utilization (via OAuth) |
+| **Cost** | Session cost in USD |
+| **Session** | Duration + lines added/removed |
+| **Output Style** | Active output style name |
+| **Update** | Indicator when a new version is available |
+| **Effort** | Reasoning effort level -- high, medium, low, or max |
+| **Extra Usage** | Bonus credit consumption shown as $used/$limit |
 
 ### Git Status Indicators
 
@@ -230,15 +246,13 @@ CCometixLine supports full configuration via TOML files and interactive TUI:
 - **Theme files**: `~/.claude/ccline/themes/*.toml` for custom themes
 - **Automatic initialization**: `ccline --init` creates default configuration
 
-### Available Segments
+### Segment Customization
 
-All segments are configurable with:
+Every segment is individually configurable:
 - Enable/disable toggle
 - Custom separators and icons
-- Color customization
-- Format options
-
-Supported segments: Directory, Git, Model, Usage, Time, Cost, OutputStyle
+- Foreground, background, and icon color
+- Bold text option
 
 ### Model Configuration (`models.toml`)
 
@@ -292,11 +306,10 @@ cargo build --release
 
 ## Roadmap
 
-- [x] TOML configuration file support
-- [x] TUI configuration interface
-- [x] Custom themes
-- [x] Interactive main menu
-- [x] Claude Code enhancement tools
+- [ ] Per-segment formatting options (truncation, padding)
+- [ ] Conditional segments (show only when a value changes)
+- [ ] Plugin system for community-contributed segments
+- [ ] Test suite with snapshot-based output validation
 
 ## Contributing
 

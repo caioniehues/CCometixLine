@@ -183,6 +183,28 @@ impl PreviewComponent {
                         map
                     },
                 },
+                SegmentId::Effort => SegmentData {
+                    primary: "high".to_string(),
+                    secondary: "".to_string(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("dynamic_icon".to_string(), "\u{f0aa3}".to_string());
+                        map.insert("effort_level".to_string(), "high".to_string());
+                        map
+                    },
+                },
+                SegmentId::ExtraUsage => SegmentData {
+                    primary: "$12.50/$200.00".to_string(),
+                    secondary: "".to_string(),
+                    metadata: {
+                        let mut map = HashMap::new();
+                        map.insert("dynamic_icon".to_string(), "\u{f0a9e}".to_string());
+                        map.insert("extra_usage_utilization".to_string(), "6.25".to_string());
+                        map.insert("used_credits".to_string(), "12.50".to_string());
+                        map.insert("monthly_limit".to_string(), "200.00".to_string());
+                        map
+                    },
+                },
             };
 
             segments_data.push((segment_config.clone(), mock_data));

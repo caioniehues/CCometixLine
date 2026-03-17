@@ -73,6 +73,26 @@ pub enum SegmentId {
     Session,
     OutputStyle,
     Update,
+    Effort,
+    ExtraUsage,
+}
+
+impl std::fmt::Display for SegmentId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SegmentId::Model => write!(f, "Model"),
+            SegmentId::Directory => write!(f, "Directory"),
+            SegmentId::Git => write!(f, "Git"),
+            SegmentId::ContextWindow => write!(f, "Context Window"),
+            SegmentId::Usage => write!(f, "Usage"),
+            SegmentId::Cost => write!(f, "Cost"),
+            SegmentId::Session => write!(f, "Session"),
+            SegmentId::OutputStyle => write!(f, "Output Style"),
+            SegmentId::Update => write!(f, "Update"),
+            SegmentId::Effort => write!(f, "Effort"),
+            SegmentId::ExtraUsage => write!(f, "Extra Usage"),
+        }
+    }
 }
 
 // Legacy compatibility structure
@@ -117,6 +137,8 @@ pub struct InputData {
     pub transcript_path: String,
     pub cost: Option<Cost>,
     pub output_style: Option<OutputStyle>,
+    #[serde(default)]
+    pub effort_level: Option<String>,
 }
 
 // OpenAI-style nested token details

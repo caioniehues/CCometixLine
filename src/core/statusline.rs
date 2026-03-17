@@ -509,6 +509,14 @@ pub fn collect_all_segments(
                 let segment = UpdateSegment::new();
                 segment.collect(input)
             }
+            crate::config::SegmentId::Effort => {
+                let segment = EffortSegment::new();
+                segment.collect(input)
+            }
+            crate::config::SegmentId::ExtraUsage => {
+                let segment = ExtraUsageSegment::new();
+                segment.collect(input)
+            }
         };
 
         if let Some(data) = segment_data {

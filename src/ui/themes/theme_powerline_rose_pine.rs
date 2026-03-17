@@ -217,6 +217,66 @@ pub fn output_style_segment() -> SegmentConfig {
     }
 }
 
+pub fn effort_segment() -> SegmentConfig {
+    SegmentConfig {
+        id: SegmentId::Effort,
+        enabled: false,
+        icon: IconConfig {
+            plain: "💪".to_string(),
+            nerd_font: "\u{f0aa3}".to_string(),
+        },
+        colors: ColorConfig {
+            icon: Some(AnsiColor::Rgb {
+                r: 156,
+                g: 207,
+                b: 216,
+            }),
+            text: Some(AnsiColor::Rgb {
+                r: 156,
+                g: 207,
+                b: 216,
+            }),
+            background: Some(AnsiColor::Rgb {
+                r: 35,
+                g: 33,
+                b: 54,
+            }),
+        },
+        styles: TextStyleConfig::default(),
+        options: HashMap::new(),
+    }
+}
+
+pub fn extra_usage_segment() -> SegmentConfig {
+    SegmentConfig {
+        id: SegmentId::ExtraUsage,
+        enabled: false,
+        icon: IconConfig {
+            plain: "💳".to_string(),
+            nerd_font: "\u{f0a9e}".to_string(),
+        },
+        colors: ColorConfig {
+            icon: Some(AnsiColor::Rgb {
+                r: 246,
+                g: 193,
+                b: 119,
+            }),
+            text: Some(AnsiColor::Rgb {
+                r: 246,
+                g: 193,
+                b: 119,
+            }),
+            background: Some(AnsiColor::Rgb {
+                r: 35,
+                g: 33,
+                b: 54,
+            }),
+        },
+        styles: TextStyleConfig::default(),
+        options: HashMap::new(),
+    }
+}
+
 pub fn usage_segment() -> SegmentConfig {
     SegmentConfig {
         id: SegmentId::Usage,

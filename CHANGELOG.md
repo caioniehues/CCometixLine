@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Effort Segment**: New segment displaying the current reasoning effort level (high/medium/low/max)
+  - Fallback chain: stdin JSON → `~/.claude/settings.json` → `CLAUDE_CODE_EFFORT_LEVEL` env var → default "high"
+  - Dynamic gauge icon changes based on effort level
+- **Extra Usage Segment**: New segment showing bonus credit consumption ($used/$limit)
+  - Reads from the shared Usage API cache (no duplicate API calls)
+  - Hidden automatically when extra usage is not enabled on the account
+  - Dynamic pie chart icon based on utilization percentage
+- **Settings Utility** (`utils/settings.rs`): Centralized `~/.claude/settings.json` reader respecting `CLAUDE_CONFIG_DIR`
+- **Shared Icon Utility**: `circle_icon_for_utilization()` in `segments/mod.rs` replaces duplicated icon functions
+- **`Display` impl for `SegmentId`**: Canonical display names, replacing 4 duplicated match blocks across the TUI
+
+### Changed
+- **Usage API Cache**: Extended with `extra_usage_*` fields, all backward-compatible via `#[serde(default)]`
+- **Usage Segment Internals**: `load_cache()`, `get_cache_path()`, `is_cache_valid()` now `pub(crate)` for cross-segment cache sharing
+- **All 9 themes**: Each theme now includes Effort and Extra Usage segment definitions (both default to disabled)
+
+### Fixed
+- **TOCTOU in `load_cache()`**: Removed redundant `exists()` check before `read_to_string()`
+
 ## [1.1.2] - 2026-03-15
 
 ### Changed
