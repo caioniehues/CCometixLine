@@ -14,9 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Handle Claude Code patcher
     if let Some(claude_path) = cli.patch {
-        use ccometixline::utils::ClaudeCodePatcher;
-
-        println!("🔧 Claude Code Context Warning Disabler");
+        println!("🔧 Claude Code Patcher");
         println!("Target file: {}", claude_path);
 
         // Create backup in same directory
@@ -24,15 +22,54 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         std::fs::copy(&claude_path, &backup_path)?;
         println!("📦 Created backup: {}", backup_path);
 
-        // Load and patch
-        let mut patcher = ClaudeCodePatcher::new(&claude_path)?;
+        // Detect file type by reading first 4 bytes
+        let magic = {
+            use std::io::Read;
+            let mut f = std::fs::File::open(&claude_path)?;
+            let mut buf = [0u8; 4];
+            f.read_exact(&mut buf)?;
+            buf
+        };
 
-        println!("\n🔄 Applying patches...");
-        let results = patcher.apply_all_patches();
-        patcher.save()?;
+        let is_elf = &magic == b"\x7FELF";
+        let is_macho = &magic == b"\xCF\xFA\xED\xFE"
+            || &magic == b"\xFE\xED\xFA\xCF"
+            || &magic == b"\xCA\xFE\xBA\xBE";
 
-        ClaudeCodePatcher::print_summary(&results);
-        println!("💡 To restore warnings, replace your cli.js with the backup file:");
+        if is_elf || is_macho {
+            use ccometixline::utils::BinaryPatcher;
+            let kind = if is_elf { "ELF" } else { "Mach-O" };
+            println!("Detected native binary ({})", kind);
+
+            let mut patcher = BinaryPatcher::new(&claude_path)?;
+
+            if !patcher.validate_claude_binary() {
+                println!("❌ This binary does not appear to be Claude Code.");
+                println!("   Expected to find Claude Code markers in the binary.");
+                println!("   Aborting to prevent accidental corruption.");
+                return Ok(());
+            }
+
+            if patcher.is_already_patched() {
+                println!("ℹ️ This binary appears to already be patched. Skipping.");
+                return Ok(());
+            }
+
+            println!("\n🔄 Applying binary patches...");
+            let results = patcher.apply_all_patches();
+            patcher.save()?;
+            BinaryPatcher::print_summary(&results);
+        } else {
+            use ccometixline::utils::ClaudeCodePatcher;
+            println!("Detected text file");
+            println!("\n🔄 Applying patches...");
+            let mut patcher = ClaudeCodePatcher::new(&claude_path)?;
+            let results = patcher.apply_all_patches();
+            patcher.save()?;
+            ClaudeCodePatcher::print_summary(&results);
+        }
+
+        println!("💡 To restore, replace with the backup file:");
         println!("   cp {} {}", backup_path, claude_path);
 
         return Ok(());
